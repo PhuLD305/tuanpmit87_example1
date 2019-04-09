@@ -1,0 +1,152 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Registrator Page</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script th:src="@{/js/new-form.js}"></script>
+    <script>
+        $( function() {
+            $( ".datepicker" ).datepicker({
+                showOn: "button",
+                buttonImage: "images/calendar.ico",
+                buttonImageOnly: true,
+                dateFormat: 'dd/mm/yy',
+                changeMonth: true,
+                changeYear: true
+            });
+        } );
+    </script>
+</head>
+<body>
+<div th:replace="menu::copy"></div>
+<h3 th:text="${userModel.userId} ? 'Cập nhật thông tin thẻ bảo hiểm' : 'Thêm mới thông tin thẻ bảo hiểm'"></h3>
+<ul>
+    <li th:utext="${err}" class="error">...</li>
+</ul>
+<form th:action="@{/doAdd}" method="POST" name="f_new">
+    <input type="hidden" th:if="${userModel.userId}" th:field="${userModel.userId}" >
+    <input type="hidden" th:if="${userModel.userId}" th:field="${insuranceModel.insuranceId}" >
+    <input type="hidden" th:if="${userModel.userId}" name="passWord" value="*" >
+    <input type="hidden" th:if="${userModel.userId}" name="oldInsuranceNumber" th:value="${oldInsuranceNumber}" >
+    <table border="0" class="box_add">
+        <tr>
+            <td>Mã số thẻ bảo hiểm</td>
+            <td><input type="text" th:field="${insuranceModel.insuranceNumber}" />(format: 10 chữ số)
+                <br><span th:if="${#fields.hasErrors('insuranceModel.insuranceNumber')}" th:errors="${insuranceModel.insuranceNumber}" class="error">123</span>
+            </td>
+        </tr>
+        <tr>
+            <td>Họ và Tên</td>
+            <td><input type="text" th:field="${userModel.userFullName}" />
+                <br><span th:if="${#fields.hasErrors('userModel.userFullName')}" th:errors="${userModel.userFullName}" class="error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>Tên đăng nhập</td>
+            <td><input type="text" th:field="${userModel.userName}" />
+                <br><span th:if="${#fields.hasErrors('userModel.userName')}" th:errors="${userModel.userName}" class="error"></span>
+            </td>
+        </tr>
+        <tr th:if="${userModel.userId == 0}">
+            <td>Mật khẩu</td>
+            <td><input type="password" th:field="${userModel.passWord}" />
+                <br><span th:if="${#fields.hasErrors('userModel.passWord')}" th:errors="${userModel.passWord}" class="error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>Giới tính</td>
+            <td>
+                <select th:field="${userModel.userSex}">
+                    <option th:value="'01'" th:text="Nam"></option>
+                    <option th:value="'02'" th:text="Nữ"></option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Ngày sinh</td>
+            <td><input type="text" class="datepicker" th:field="${userModel.birthday}" /> (format: dd/MM/yyyy)</td>
+        </tr>
+        <tr>
+            <td>Công ty</td>
+            <td>
+                <input type="radio" name="hasExist" class="hasExist" id="hasExist" value="1" checked="checked"> Công ty đã có<br>
+                <div style="margin-left: 10px;">
+                    <select th:field="${companyModel.companyId}">
+                    <option th:each="companyInfo : ${companyLists}" th:value="${companyInfo.get('company_internal_id')}"
+                            th:text="${companyInfo.get('company_name')}"
+                            th:selected="${companyModel.companyId == companyInfo.get('company_internal_id')} " >...</option>
+                    </select><br>
+                    <table border="0" style="display: none" id="box-company-info" cellpadding="1px">
+                        <tr>
+                            <td>Tên công ty</td>
+                            <td class="company_name"></td>
+                        </tr>
+                        <tr>
+                            <td>Địa chỉ</td>
+                            <td class="address"></td>
+                        </tr>
+                        <tr>
+                            <td>Email</td>
+                            <td class="email"></td>
+                        </tr>
+                        <tr>
+                            <td>Điện thoại</td>
+                            <td class="telephone"></td>
+                        </tr>
+                    </table>
+                </div>
+                <input type="radio" name="hasExist" class="hasExist" id="noExist" value="0"> Đăng ký theo công ty mới<br>
+                <div style="margin-left: 10px;">
+                    <table border="0" style="display: none" id="box-company-new">
+                        <tr>
+                            <td>Tên công ty</td>
+                            <td><input type="text" th:field="${companyModel.companyName}"/></td>
+                        </tr>
+                        <tr>
+                            <td>Địa chỉ</td>
+                            <td><input type="text" th:field="${companyModel.address}" /></td>
+                        </tr>
+                        <tr>
+                            <td>Email</td>
+                            <td><input type="text" th:field="${companyModel.email}" /></td>
+                        </tr>
+                        <tr>
+                            <td>Điện thoại</td>
+                            <td><input type="text" th:field="${companyModel.telephone}"  /></td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>Nơi đăng ký KCB</td>
+            <td><input type="text" th:field="${insuranceModel.placeOfRegister}" />
+                <br><span th:if="${#fields.hasErrors('insuranceModel.placeOfRegister')}" th:errors="${insuranceModel.placeOfRegister}" class="error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>Ngày bắt đầu thẻ BH</td>
+            <td><input type="text" class="datepicker" th:field="${insuranceModel.insuranceStartDate}" /> (format: dd/MM/yyyy)
+                <br><span th:if="${#fields.hasErrors('insuranceModel.insuranceStartDate')}" th:errors="${insuranceModel.insuranceStartDate}" class="error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>Ngày kết thúc thẻ BH</td>
+            <td><input type="text" class="datepicker" th:field="${insuranceModel.insuranceEndDate}" /> (format: dd/MM/yyyy)
+                <br><span th:if="${#fields.hasErrors('insuranceModel.insuranceEndDate')}" th:errors="${insuranceModel.insuranceEndDate}" class="error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                <a th:href="@{/user-list}" class="btn">Hủy</a>
+                <a href="#" id="btn_update" class="btn" th:text="${userModel.userId} ? 'Cập nhật' : 'Đăng ký'"></a>
+            </td>
+        </tr>
+    </table>
+</form>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<div th:fragment="copy" style="margin-left: -15px;">
+    <ul th:if="${totalPage > 1}">
+        <li th:if="${currentPage > 1}" class="page-item">
+            <a th:href="@{/user-list(page = ${currentPage} - 1, sort = ${paramSort})}" ><<</a> |
+        </li>
+        <li th:each="pageNum : ${#numbers.sequence(startPage, endPage)}" class="page-item">
+            <span th:if="${pageNum != startPage}">|</span> <a th:href="@{/user-list(page = ${pageNum}, sort = ${paramSort})}"
+               th:text="${pageNum}" th:classappend="${pageNum == currentPage} ? 'activepagenumber' : ''"></a>
+        </li>
+        <li th:if="${currentPage < totalPage}" class="page-item">
+            | <a th:href="@{/user-list(page = ${currentPage} + 1, sort = ${paramSort})}" >>></a>
+        </li>
+    </ul>
+</div>

@@ -1,0 +1,66 @@
+body {
+    width: 60%;
+    border: solid 1px;
+    padding: 15px;
+}
+ul {
+    list-style: none;
+}
+table {
+    border-collapse: collapse;
+}
+table th, table td {
+    padding: 5px;
+}
+table#box-company-info td {
+    padding: 1px 5px;
+}
+table.box_search td,table.box_login td {
+    padding: 10px !important;
+}
+.box_add tr td {
+    vertical-align: top;
+}
+.bg {
+    background-color: khaki;
+}
+.btn {
+     border: solid 2px;
+     border-color: black;
+     padding: 3px 14px;
+     background: lightgray;
+}
+input[type="radio" i] {
+    margin: 10px 0;
+}
+.ui-datepicker-trigger {
+    margin-bottom: -5px;
+    padding-left: 3px;
+    width: 20px;
+}
+.btn_del {
+    float: left;
+    margin: 0 10px;
+    width: 16%;
+    text-align: right;
+}
+.box {
+    margin: 20px 0px;
+    width: 50%;
+}
+.error {
+    color:red;
+    font-style:italic;
+}
+.logout {
+    float: right;
+    margin-right: 20px;
+}
+.page-item {
+    display: inline;
+}
+.activepagenumber {
+    font-weight: bold;
+    color: black;
+    text-decoration: none;
+}

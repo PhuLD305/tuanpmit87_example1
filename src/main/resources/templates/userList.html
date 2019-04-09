@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>List Page</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}"/>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script th:src="@{/js/common.js}"></script>
+</head>
+<body>
+<div th:replace="menu::copy"></div>
+<h3>Danh sách thẻ bảo hiểm</h3>
+<div style="padding-left: 20px"><strong>Tên công ty</strong><br/>
+<select name="company" id="company">
+    <option th:each="companyInfo : ${companyLists}" th:value="${companyInfo.get('company_internal_id')}"
+            th:text="${companyInfo.get('company_name')}" th:selected="${companyInfo.get('company_internal_id') == companyId}">...</option>
+</select>
+</div>
+<div class="box">
+    <span><strong>Thông tin tìm kiếm</strong></span>
+    <div style="border: solid 1px;">
+        <form name="f_search" th:action="@{/user-list}" method="post">
+            <table border="0" class="box_search">
+                <tr>
+                    <td>Tên người sử dụng</td>
+                    <td><input type="text" th:field="${searchForm.userName}" /></td>
+                </tr>
+                <tr>
+                    <td>Mã số thẻ bảo hiểm</td>
+                    <td><input type="text" th:field="${searchForm.insuranceNumber}" /></td>
+                </tr>
+                <tr>
+                    <td>Nơi đăng ký</td>
+                    <td><input type="text" th:field="${searchForm.placeOfRegister}" /></td>
+                </tr>
+                <tr>
+                    <td colspan="2" align="center"><a href="#" id="btn_search" class="btn" >Tìm kiếm</a></td>
+                </tr>
+            </table>
+
+        </form>
+    </div>
+</div>
+<div style="float: left;"><a th:href="@{/user(act='add')}" class="btn">Đăng ký</a></div>
+<div style="float: right;width: 40%;" th:if="${userLists.size() > 0}"><a th:href="@{/user-list(act='export')}" class="btn">Export CSV</a></div>
+<br/><br/>
+<div>
+    <div th:replace="paging::copy"></div>
+    <table border="1" th:if="${userLists.size() > 0}" style="text-align: center">
+        <tr>
+            <td style="width: 23%;">Tên người sử dụng <span id="sort" th:alt="${paramSort}"></span></td>
+            <td style="width: 9%;">Giới tính</td>
+            <td style="width: 9%;">Ngày sinh</td>
+            <td style="width: 16%;">Mã số thẻ bảo hiểm</td>
+            <td style="width: 18%;">Kỳ hạn</td>
+            <td style="width: 23%;">Nơi đăng ký KCB</td>
+        </tr>
+        <tr th:each="userInfo : ${userLists}">
+            <td style="text-align: left">
+                <a th:text ="${userInfo.get('user_full_name')}" th:href="@{/detail(id=${userInfo.get('user_internal_id')})}"></a>
+            </td>
+            <td th:utext="${userInfo.get('user_sex_division') == '02'} ? 'Nữ' : 'Nam'">...</td>
+            <td th:text ="${#calendars.format(userInfo.get('birthdate'), 'dd/MM/yyyy')}">...</td>
+            <td th:text ="${userInfo.get('insurance_number')}">...</td>
+            <td >
+                <span th:text ="${#calendars.format(userInfo.get('insurance_start_date'), 'dd/MM/yyyy')}"></span>
+                ~
+                <span th:text ="${#calendars.format(userInfo.get('insurance_end_date'), 'dd/MM/yyyy')}"></span>
+            </td>
+            <td th:text ="${userInfo.get('place_of_register')}" style="text-align: left">...</td>
+        </tr>
+    </table>
+    <div th:if="${userLists.size() == 0}" style="text-align: center;color: red;">Không tìm thấy thẻ bảo hiểm</div>
+</div>
+</body>
+</html>

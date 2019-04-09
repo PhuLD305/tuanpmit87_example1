@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Detail Page</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div th:replace="menu::copy"></div>
+<h3>Chi tiết thông tin thẻ bảo hiểm</h3>
+<div><a th:href="@{/user-list}" class="btn">Quay lại</a></div>
+
+<div class="box">
+    <table border="1" class="box_detail">
+        <tr>
+            <td class="bg">Mã số thẻ bảo hiểm</td>
+            <td th:text="${userInfo.get('insurance_number')}"></td>
+        </tr>
+        <tr>
+            <td class="bg">Họ và Tên</td>
+            <td th:text="${userInfo.get('user_full_name')}"></td>
+        </tr>
+        <tr>
+            <td class="bg">Giới tính</td>
+            <td th:text="${userInfo.get('user_sex_division') == '02'} ? 'Nữ' : 'Nam'"></td>
+        </tr>
+        <tr>
+            <td class="bg">Ngày sinh</td>
+            <td th:text="${#calendars.format(userInfo.get('birthdate'), 'dd/MM/yyyy')}"></td>
+        </tr>
+        <tr>
+            <td class="bg">Tên công ty</td>
+            <td th:text="${userInfo.get('company_name')}"></td>
+        </tr>
+        <tr>
+            <td class="bg">Nơi đăng ký KCB</td>
+            <td th:text="${userInfo.get('place_of_register')}"></td>
+        </tr>
+        <tr>
+            <td class="bg">Kỳ hạn thẻ bảo hiểm</td>
+            <td><span th:text ="${#calendars.format(userInfo.get('insurance_start_date'), 'dd/MM/yyyy')}"></span>
+                đến
+                <span th:text ="${#calendars.format(userInfo.get('insurance_end_date'), 'dd/MM/yyyy')}"></span></td>
+        </tr>
+    </table>
+</div>
+<div class="btn_del"><a th:href="@{/delete-user(id=${userInfo.get('user_internal_id')})}" class="btn">Xóa</a></div>
+<div><a th:href="@{/user(act='update', id=${userInfo.get('user_internal_id')})}" class="btn">Cập nhật</a></div>
+</body>
+</html>
