@@ -7,7 +7,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import metro.example1.common.Utility;
-import metro.example1.model.InsuranceInfo;
+import metro.example1.model.InsuranceModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
@@ -23,36 +23,57 @@ public class InsuranceDao extends JdbcDaoSupport {
         this.setDataSource(dataSource);
     }
 
-    public String addInsurance(InsuranceInfo insuranceModel) throws ParseException {
+    /**
+     * Add a new insurance
+     *
+     * @param insuranceModel
+     * @return Last id
+     * @throws ParseException
+     */
+    public int addInsurance(InsuranceModel insuranceModel) throws ParseException {
         String sql = "INSERT INTO tbl_insurance VALUES(?, ?, ?, ?, ?)";
         String insuranceNumber = insuranceModel.getInsuranceNumber();
-        String startDate = Utility.convertDate(insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd");
-        String endDate = Utility.convertDate(insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd");
+        String startDate = Utility.formatDate(insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd");
+        String endDate = Utility.formatDate(insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd");
         String place = insuranceModel.getPlaceOfRegister();
 
         Object[] params = new Object[] { null, insuranceNumber, startDate, endDate, place };
         int res = this.getJdbcTemplate().update(sql, params);
-        String lastId = "";
+        int lastId = 0;
+        // not error
         if (res == 1) {
-            List<Map<String, Object>> objectMap = this.getJdbcTemplate().queryForList( "SELECT last_insert_id() as id" );
-            lastId = objectMap.get(0).get("id").toString();
+            sql = "SELECT last_insert_id() as id";
+            Map<String, Object> objectMap = this.getJdbcTemplate().queryForList(sql).get(0);
+            lastId = Integer.parseInt(objectMap.get("id").toString());
         }
         return lastId;
     }
 
-    public void updateInsurance(InsuranceInfo insuranceModel) throws ParseException {
+    /**
+     * Update insurance information
+     *
+     * @param insuranceModel
+     * @throws ParseException
+     */
+    public void updateInsurance(InsuranceModel insuranceModel) throws ParseException {
         String sql = "UPDATE tbl_insurance SET"
                 + " insurance_number = ?, insurance_start_date = ?, insurance_end_date = ?, place_of_register =?"
                 + " WHERE insurance_internal_id = ?";
         String insuranceNumber = insuranceModel.getInsuranceNumber();
-        String startDate = Utility.convertDate(insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd");
-        String endDate = Utility.convertDate(insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd");
+        String startDate = Utility.formatDate(insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd");
+        String endDate = Utility.formatDate(insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd");
         String place = insuranceModel.getPlaceOfRegister();
 
         Object[] params = new Object[] { insuranceNumber, startDate, endDate, place, insuranceModel.getInsuranceId() };
         this.getJdbcTemplate().update(sql, params);
     }
 
+    /**
+     * Check duplicate insurance number
+     *
+     * @param insuranceNumber insurance_number
+     * @return true if exist insurance number, false if not exist
+     */
     public boolean checkExistInsuranceNumber(String insuranceNumber) {
         String sql = "SELECT count(*) FROM tbl_insurance" +
                 " WHERE insurance_number = ?";

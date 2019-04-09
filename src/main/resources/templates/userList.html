@@ -12,8 +12,8 @@
 <h3>Danh sách thẻ bảo hiểm</h3>
 <div style="padding-left: 20px"><strong>Tên công ty</strong><br/>
 <select name="company" id="company">
-    <option th:each="companyInfo : ${companyLists}" th:value="${companyInfo.get('company_internal_id')}"
-            th:text="${companyInfo.get('company_name')}" th:selected="${companyInfo.get('company_internal_id') == companyId}">...</option>
+    <option th:each="companyInfo : ${companyLists}" th:value="${companyInfo.companyInternalId}"
+            th:text="${companyInfo.companyName}" th:selected="${companyInfo.companyInternalId == companyId}">...</option>
 </select>
 </div>
 <div class="box">

@@ -3,7 +3,7 @@ package metro.example1.model;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
-public class InsuranceInfo {
+public class InsuranceModel {
     private int insuranceId;
 
     @Size(min=10, max=10, message = "[Mã số thẻ bảo hiểm] gồm 10 chữ số")

@@ -75,10 +75,10 @@
             <td>
                 <input type="radio" name="hasExist" class="hasExist" id="hasExist" value="1" checked="checked"> Công ty đã có<br>
                 <div style="margin-left: 10px;">
-                    <select th:field="${companyModel.companyId}">
-                    <option th:each="companyInfo : ${companyLists}" th:value="${companyInfo.get('company_internal_id')}"
-                            th:text="${companyInfo.get('company_name')}"
-                            th:selected="${companyModel.companyId == companyInfo.get('company_internal_id')} " >...</option>
+                    <select th:field="${companyModel.companyInternalId}">
+                    <option th:each="companyInfo : ${companyLists}" th:value="${companyInfo.companyInternalId}"
+                            th:text="${companyInfo.companyName}"
+                            th:selected="${companyModel.companyInternalId == companyInfo.companyInternalId} " >...</option>
                     </select><br>
                     <table border="0" style="display: none" id="box-company-info" cellpadding="1px">
                         <tr>

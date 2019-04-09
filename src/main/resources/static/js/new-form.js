@@ -1,6 +1,6 @@
 $(document).ready(function(){
-    getCompanyInfo($("#companyId option:selected").val());
-    $("#companyId").change(function(){
+    getCompanyInfo($("#companyInternalId option:selected").val());
+    $("#companyInternalId").change(function(){
         $("#hasExist").prop("checked", true);
         changeRadio(1);
         getCompanyInfo(this.value);

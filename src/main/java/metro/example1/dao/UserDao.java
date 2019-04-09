@@ -2,7 +2,7 @@ package metro.example1.dao;
 
 import metro.example1.common.Utility;
 import metro.example1.form.SearchForm;
-import metro.example1.model.UserInfo;
+import metro.example1.model.UserModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
@@ -24,6 +24,17 @@ public class UserDao extends JdbcDaoSupport {
         this.setDataSource(dataSource);
     }
 
+    /**
+     * Find all user by condition
+     *
+     * @param searchForm
+     * @param companyId company_internal_id
+     * @param sort asc or desc
+     * @param currentPage current page
+     * @param limit number record per page
+     * @param getTotal true if get total record, false if get limit record
+     * @return List user information
+     */
     public List<Map<String, Object>> getUserLists(
         SearchForm searchForm,
         int companyId,
@@ -32,59 +43,71 @@ public class UserDao extends JdbcDaoSupport {
         int limit,
         boolean getTotal
     ) {
-
         String sql = "SELECT user.user_internal_id, user.user_full_name, user.user_sex_division,user.birthdate, ins.*" +
             " FROM tbl_user user" +
             " LEFT JOIN tbl_company com ON com.company_internal_id = user.company_internal_id" +
             " LEFT JOIN tbl_insurance ins ON ins.insurance_internal_id = user.insurance_internal_id";
 
-        ArrayList<String> aryWhere = new ArrayList<>();
+        ArrayList<String> wheres = new ArrayList<>();
         if(companyId != 0) {
-            aryWhere.add("user.company_internal_id = " + companyId);
+            wheres.add("user.company_internal_id = " + companyId);
         }
         if(searchForm.getUserName() != null) {
-            aryWhere.add("user.user_full_name LIKE '%" + searchForm.getUserName() + "%'");
+            wheres.add("user.user_full_name LIKE '%" + searchForm.getUserName() + "%'");
         }
         if(searchForm.getInsuranceNumber() != null) {
-            aryWhere.add("ins.insurance_number LIKE '%" + searchForm.getInsuranceNumber() + "%'");
+            wheres.add("ins.insurance_number LIKE '%" + searchForm.getInsuranceNumber() + "%'");
         }
         if(searchForm.getPlaceOfRegister() != null) {
-            aryWhere.add("ins.place_of_register LIKE '%" + searchForm.getPlaceOfRegister() + "%'");
+            wheres.add("ins.place_of_register LIKE '%" + searchForm.getPlaceOfRegister() + "%'");
         }
 
-        String strWhere ="";
-        if(aryWhere.size() > 0) {
-            strWhere = " WHERE " + String.join(" AND ", aryWhere);
+        String sqlWhere ="";
+        if(wheres.size() > 0) {
+            sqlWhere = " WHERE " + String.join(" AND ", wheres);
         }
 
-        String strSort = "";
+        String sqlSort = "";
         if (sort != null) {
-            strSort = " ORDER BY user.user_full_name " + sort;
+            sqlSort = " ORDER BY user.user_full_name " + sort;
         }
 
-        String strLimit = "";
-        if (!getTotal) {
-            strLimit = " LIMIT " + limit * (currentPage - 1) + ", " + limit;
+        String sqlLimit = "";
+        if (getTotal == false) {
+            sqlLimit = " LIMIT " + limit * (currentPage - 1) + ", " + limit;
         }
-        List<Map<String, Object>> list = this.getJdbcTemplate().queryForList(sql + strWhere + strSort + strLimit);
 
-        return list;
+        List<Map<String, Object>> userList = this.getJdbcTemplate().queryForList(sql + sqlWhere + sqlSort + sqlLimit);
+        return userList;
     }
 
-    public List<Map<String, Object>> getUserInfo(int userId) {
+    /**
+     * Find detail infirmation by user id
+     *
+     * @param userId user_internal_id
+     * @return Map
+     */
+    public Map<String, Object> findDetailInfoById(int userId) {
         String sql = "SELECT * FROM tbl_user user" +
                 " LEFT JOIN tbl_company com ON com.company_internal_id = user.company_internal_id" +
                 " LEFT JOIN tbl_insurance ins ON ins.insurance_internal_id = user.insurance_internal_id" +
                 " WHERE user.user_internal_id = ?";
 
-        List<Map<String, Object>> list = this.getJdbcTemplate().queryForList(sql, userId);
-
-        return list;
+        Map<String, Object> userMap = this.getJdbcTemplate().queryForMap(sql, userId);
+        return userMap;
     }
 
+    /**
+     * Check login information
+     *
+     * @param userName username
+     * @param passWord password
+     * @return If matching with userName, passWord then return true, else return false
+     */
     public boolean checkLogin(String userName, String passWord) {
         String sql = "SELECT count(*) FROM tbl_user user" +
                 " WHERE username = ? AND password = ?";
+
         Object[] params = new Object[] { userName, Utility.getMd5(passWord) };
         try {
             List<String> userInfo = this.getJdbcTemplate().queryForList(sql, String.class, params);
@@ -97,41 +120,58 @@ public class UserDao extends JdbcDaoSupport {
         return false;
     }
 
-    public void addUser(UserInfo userModel) throws ParseException {
+    /**
+     * Add a new user
+     *
+     * @param userModel
+     * @throws ParseException
+     */
+    public void addUser(UserModel userModel) throws ParseException {
         String sql = "INSERT INTO tbl_user VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-        int companyId = userModel.getCompanyId();
+
+        int companyId = userModel.getCompanyInternalId();
         int insId = userModel.getInsuranceId();
         String userName = userModel.getUserName();
-        String passWord = userModel.getPassWord();
+        String passWord = Utility.getMd5(userModel.getPassWord());
         String fullName = userModel.getUserFullName();
         String sexDivision = userModel.getUserSex();
+        String birthDate = Utility.formatDate(userModel.getBirthday(), "dd/MM/yyyy", "yyyy-MM-dd");
 
-        String birthDate = Utility.convertDate(userModel.getBirthday(), "dd/MM/yyyy", "yyyy-MM-dd");
-
-        Object[] params = new Object[] { null, companyId, insId, userName,
-                Utility.getMd5(passWord), fullName, sexDivision, birthDate };
+        Object[] params = new Object[] { null, companyId, insId, userName, passWord, fullName, sexDivision, birthDate };
         this.getJdbcTemplate().update(sql, params);
     }
 
-    public void updateUser(UserInfo userModel) throws ParseException {
+    /**
+     * Update user information
+     *
+     * @param userModel
+     * @throws ParseException
+     */
+    public void updateUser(UserModel userModel) throws ParseException {
         String sql = "UPDATE tbl_user SET"
                 + " company_internal_id = ?, username = ?, user_full_name = ?, user_sex_division = ?, birthdate = ?"
                 + " WHERE user_internal_id = ?";
-        int companyId = userModel.getCompanyId();
+
+        int companyId = userModel.getCompanyInternalId();
         String userName = userModel.getUserName();
         String fullName = userModel.getUserFullName();
         String sexDivision = userModel.getUserSex();
-
-        String birthDate = Utility.convertDate(userModel.getBirthday(), "dd/MM/yyyy", "yyyy-MM-dd");
+        String birthDate = Utility.formatDate(userModel.getBirthday(), "dd/MM/yyyy", "yyyy-MM-dd");
 
         Object[] params = new Object[] { companyId, userName, fullName, sexDivision, birthDate, userModel.getUserId() };
         this.getJdbcTemplate().update(sql, params);
     }
 
+    /**
+     * Delete user, insurance by user_internal_id
+     *
+     * @param id user_internal_id
+     */
     public void deleteUser(int id) {
         String sql = "DELETE user, ins FROM tbl_user as user" +
                 " INNER JOIN tbl_insurance as ins ON ins.insurance_internal_id = user.insurance_internal_id" +
                 " WHERE user.user_internal_id = ?";
+
         this.getJdbcTemplate().update(sql, id);
     }
 }

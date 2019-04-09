@@ -1,19 +1,19 @@
 package metro.example1.model;
 
-public class CompanyInfo {
+public class CompanyModel {
 
-    private int companyId;
+    private int companyInternalId;
     private String companyName;
     private String address;
     private String email;
     private String telephone;
 
-    public int getCompanyId() {
-        return companyId;
+    public int getCompanyInternalId() {
+        return companyInternalId;
     }
 
-    public void setCompanyId(int companyId) {
-        this.companyId = companyId;
+    public void setCompanyInternalId(int companyInternalId) {
+        this.companyInternalId = companyInternalId;
     }
 
     public String getCompanyName() {

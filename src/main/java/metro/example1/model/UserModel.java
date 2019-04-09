@@ -2,10 +2,10 @@ package metro.example1.model;
 
 import javax.validation.constraints.NotBlank;
 
-public class UserInfo {
+public class UserModel {
 
     private int userId;
-    private int companyId;
+    private int companyInternalId;
     private int insuranceId;
 
     @NotBlank(message = "Hãy nhập [Tên đăng nhập]!")
@@ -28,12 +28,12 @@ public class UserInfo {
         this.userId = userId;
     }
 
-    public int getCompanyId() {
-        return companyId;
+    public int getCompanyInternalId() {
+        return companyInternalId;
     }
 
-    public void setCompanyId(int companyId) {
-        this.companyId = companyId;
+    public void setCompanyInternalId(int companyInternalId) {
+        this.companyInternalId = companyInternalId;
     }
 
     public int getInsuranceId() {

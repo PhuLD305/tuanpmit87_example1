@@ -8,9 +8,9 @@ import metro.example1.dao.InsuranceDao;
 import metro.example1.dao.UserDao;
 import metro.example1.form.LoginForm;
 import metro.example1.form.SearchForm;
-import metro.example1.model.CompanyInfo;
-import metro.example1.model.InsuranceInfo;
-import metro.example1.model.UserInfo;
+import metro.example1.model.CompanyModel;
+import metro.example1.model.InsuranceModel;
+import metro.example1.model.UserModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -50,7 +50,7 @@ public class MainController {
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public String login(@Valid LoginForm loginForm, BindingResult bindingResult, Model model, HttpServletRequest request) {
-        if (!bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors() == false) {
             String userName = loginForm.getUserName();
             String passWord = loginForm.getPassWord();
             boolean check = userDao.checkLogin(userName, passWord);
@@ -87,11 +87,10 @@ public class MainController {
             return "redirect:/login";
         }
 
-        List<Map<String, Object>> companyLists = companyDao.getCompanyLists();
+        List<CompanyModel> companyLists = companyDao.getCompanyLists();
         model.addAttribute("companyLists", companyLists);
 
         if (request.getMethod().equals("POST")) {
-            System.out.println(searchForm.getUserName());
             if (searchForm.getUserName() != null) {
                 session.setAttribute("sessionParamUserName", searchForm.getUserName());
             }
@@ -103,7 +102,7 @@ public class MainController {
             }
         }
 
-        int companyId;
+        int companyId = companyLists.get(0).getCompanyInternalId();
         if (request.getParameter("companyId") != null) {
             companyId = Integer.parseInt(request.getParameter("companyId").toString());
             session.removeAttribute("sessionParamUserName");
@@ -113,8 +112,6 @@ public class MainController {
         } else if (session.getAttribute("sessionCompanyId") != null) {
             companyId = Integer.parseInt(session.getAttribute("sessionCompanyId").toString());
             session.removeAttribute("sessionCompanyId");
-        } else {
-            companyId = Integer.parseInt(companyLists.get(0).get("company_internal_id").toString());
         }
         model.addAttribute("companyId", companyId);
         session.setAttribute("sessionCompanyId", companyId);
@@ -153,7 +150,7 @@ public class MainController {
         Utility.setPaging(model, totalRecord, limit, currentPage, 5);
 
         if (request.getParameter("act") != null && request.getParameter("act").equals("export")) {
-            CompanyInfo companyInfo = companyDao.findCompanyById(companyId);
+            CompanyModel companyInfo = companyDao.findCompanyById(companyId);
             Utility.download(userTotalLists, companyInfo, response);
         }
         return "userList";
@@ -166,16 +163,16 @@ public class MainController {
             return "redirect:/login";
         }
         int id = Integer.parseInt(request.getParameter("id"));
-        List<Map<String, Object>> userInfo = userDao.getUserInfo(id);
-        model.addAttribute("userInfo", userInfo.get(0));
+        Map<String, Object> userMap = userDao.findDetailInfoById(id);
+        model.addAttribute("detailInfo", userMap);
         return "detail";
     }
 
     @RequestMapping(value = "/user", method = {RequestMethod.GET, RequestMethod.POST})
     public String newForm(
-        UserInfo userModel,
-        CompanyInfo companyModel,
-        InsuranceInfo insuranceModel,
+        UserModel userModel,
+        CompanyModel companyModel,
+        InsuranceModel insuranceModel,
         Model model,
         HttpServletRequest request
     ) throws ParseException {
@@ -183,24 +180,24 @@ public class MainController {
         if(session.getAttribute("isLogin") == null) {
             return "redirect:/login";
         }
-        List<Map<String, Object>> companyLists = companyDao.getCompanyLists();
+        List<CompanyModel> companyLists = companyDao.getCompanyLists();
         model.addAttribute("companyLists", companyLists);
 
-        companyModel.setCompanyId(Integer.parseInt(session.getAttribute("sessionCompanyId").toString()));
+        companyModel.setCompanyInternalId(Integer.parseInt(session.getAttribute("sessionCompanyId").toString()));
 
         if(request.getParameter("id") != null) {
             int userId = Integer.parseInt(request.getParameter("id"));
-            Map<String, Object> userInfo = userDao.getUserInfo(userId).get(0);
+            Map<String, Object> userInfo = userDao.findDetailInfoById(userId);
 
-            companyModel.setCompanyId(Integer.parseInt(userInfo.get("company_internal_id").toString()));
+            companyModel.setCompanyInternalId(Integer.parseInt(userInfo.get("company_internal_id").toString()));
 
             insuranceModel.setInsuranceId(Integer.parseInt(userInfo.get("insurance_internal_id").toString()));
             insuranceModel.setInsuranceNumber(userInfo.get("insurance_number").toString());
             insuranceModel.setPlaceOfRegister(userInfo.get("place_of_register").toString());
             String startDate = userInfo.get("insurance_start_date").toString();
-            insuranceModel.setInsuranceStartDate(Utility.convertDate(startDate, "yyyy-MM-dd", "dd/MM/yyyy"));
+            insuranceModel.setInsuranceStartDate(Utility.formatDate(startDate, "yyyy-MM-dd", "dd/MM/yyyy"));
             String endDate = userInfo.get("insurance_end_date").toString();
-            insuranceModel.setInsuranceEndDate(Utility.convertDate(endDate, "yyyy-MM-dd", "dd/MM/yyyy"));
+            insuranceModel.setInsuranceEndDate(Utility.formatDate(endDate, "yyyy-MM-dd", "dd/MM/yyyy"));
 
             userModel.setUserId(userId);
             userModel.setUserFullName(userInfo.get("user_full_name").toString());
@@ -209,7 +206,7 @@ public class MainController {
             userModel.setUserSex(userInfo.get("user_sex_division").toString());
             if (userInfo.get("birthdate") != null) {
                 String birthdate = userInfo.get("birthdate").toString();
-                userModel.setBirthday(Utility.convertDate(birthdate, "yyyy-MM-dd", "dd/MM/yyyy"));
+                userModel.setBirthday(Utility.formatDate(birthdate, "yyyy-MM-dd", "dd/MM/yyyy"));
             }
 
             model.addAttribute("oldInsuranceNumber", userInfo.get("insurance_number").toString());
@@ -222,10 +219,10 @@ public class MainController {
 
     @RequestMapping(value = "/doAdd", method = RequestMethod.POST)
     public String updateUser(
-        @Valid @ModelAttribute("userModel") UserInfo userModel,
+        @Valid @ModelAttribute("userModel") UserModel userModel,
         BindingResult bindingResult1,
-        CompanyInfo companyModel,
-        @Valid @ModelAttribute("insuranceModel")InsuranceInfo insuranceModel,
+        CompanyModel companyModel,
+        @Valid @ModelAttribute("insuranceModel")InsuranceModel insuranceModel,
         BindingResult bindingResult2,
         Model model,
         HttpServletRequest request
@@ -235,24 +232,24 @@ public class MainController {
             return "redirect:/login";
         }
         String oldNumber = request.getParameter("oldInsuranceNumber");
-        if (!bindingResult1.hasErrors() && !bindingResult2.hasErrors()) {
+        if (bindingResult1.hasErrors() == false && bindingResult2.hasErrors() == false) {
             boolean check = insuranceDao.checkExistInsuranceNumber(insuranceModel.getInsuranceNumber());
-            if (((oldNumber == null) || ((oldNumber != null) && (!oldNumber.equals(insuranceModel.getInsuranceNumber())))) && check) {
+            if (((oldNumber == null) || ((oldNumber != null) && (oldNumber.equals(insuranceModel.getInsuranceNumber()) == false))) && check) {
                 model.addAttribute("err", "Đã tồn tại thông tin thẻ bảo hiểm!");
             } else {
                 String hasExist = request.getParameter("hasExist");
                 if (hasExist.equals("0")) {
-                    companyModel.setCompanyName(Utility.convertString(companyModel.getCompanyName()));
-                    String companyId = companyDao.addCompany(companyModel);
-                    userModel.setCompanyId(Integer.parseInt(companyId));
+                    companyModel.setCompanyName(Utility.formatString(companyModel.getCompanyName()));
+                    int companyId = companyDao.addCompany(companyModel);
+                    userModel.setCompanyInternalId(companyId);
                 }
-                userModel.setUserFullName(Utility.convertString(userModel.getUserFullName()));
+                userModel.setUserFullName(Utility.formatString(userModel.getUserFullName()));
                 if(request.getParameter("userId") != null) {
                     insuranceDao.updateInsurance(insuranceModel);
                     userDao.updateUser(userModel);
                 } else {
-                    String insuranceId = insuranceDao.addInsurance(insuranceModel);
-                    userModel.setInsuranceId(Integer.parseInt(insuranceId));
+                    int insuranceId = insuranceDao.addInsurance(insuranceModel);
+                    userModel.setInsuranceId(insuranceId);
                     userDao.addUser(userModel);
                 }
                 session.removeAttribute("sessionParamUserName");
@@ -263,7 +260,7 @@ public class MainController {
             }
         }
         model.addAttribute("oldInsuranceNumber", oldNumber);
-        List<Map<String, Object>> companyLists = companyDao.getCompanyLists();
+        List<CompanyModel> companyLists = companyDao.getCompanyLists();
         model.addAttribute("companyLists", companyLists);
         model.addAttribute("userModel", userModel);
         model.addAttribute("companyModel", companyModel);
@@ -291,10 +288,10 @@ public class MainController {
 
     @RequestMapping(value = "/company-info", method = RequestMethod.GET)
     public void getCompanyInfo(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        CompanyInfo companyInfo = companyDao.findCompanyById(Integer.parseInt(request.getParameter("id")));
+        CompanyModel companyInfo = companyDao.findCompanyById(Integer.parseInt(request.getParameter("id")));
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         String jsonData = ow.writeValueAsString(companyInfo);
-        response.setContentType("application/json");
+        response.setContentType("application/json; charset=UTF-8");
         response.getWriter().write(jsonData);
     }
 }

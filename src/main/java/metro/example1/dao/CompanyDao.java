@@ -5,7 +5,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import metro.example1.model.CompanyInfo;
+import metro.example1.model.CompanyModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
@@ -21,13 +21,25 @@ public class CompanyDao extends JdbcDaoSupport {
         this.setDataSource(dataSource);
     }
 
-    public List<Map<String, Object>> getCompanyLists() {
-        String sql = "SELECT c.company_internal_id, c.company_name FROM tbl_company c ORDER BY c.company_name";
-        List<Map<String, Object>> list = this.getJdbcTemplate().queryForList(sql);
-        return list;
+
+    /**
+     * Find all {@link CompanyModel}, order by name asc
+     *
+     * @return List of {@link CompanyModel}
+     */
+    public List<CompanyModel> getCompanyLists() {
+        String sql = "SELECT * FROM tbl_company ORDER BY company_name";
+        List<CompanyModel> companyList = this.getJdbcTemplate().query(sql, new BeanPropertyRowMapper(CompanyModel.class));
+        return companyList;
     }
 
-    public String addCompany(CompanyInfo companyModel) {
+    /**
+     * Add a new company
+     *
+     * @param companyModel model Company
+     * @return Last id
+     */
+    public int addCompany(CompanyModel companyModel) {
         String sql = "INSERT INTO tbl_company VALUES(?, ?, ?, ?, ?)";
         String companyName = companyModel.getCompanyName();
         String address = companyModel.getAddress();
@@ -36,19 +48,30 @@ public class CompanyDao extends JdbcDaoSupport {
 
         Object[] params = new Object[] { null, companyName, address, email, telephone };
         int res = this.getJdbcTemplate().update(sql, params);
-        String lastId = "";
+        int lastId = 0;
+        // not error
         if (res == 1) {
-            List<Map<String, Object>> objectMap = this.getJdbcTemplate().queryForList( "SELECT last_insert_id() as id" );
-            lastId = objectMap.get(0).get("id").toString();
+            sql = "SELECT last_insert_id() as id";
+            Map<String, Object> objectMap = this.getJdbcTemplate().queryForList(sql).get(0);
+            lastId = Integer.parseInt(objectMap.get("id").toString());
         }
         return lastId;
     }
 
-    public CompanyInfo findCompanyById(int id) {
-        CompanyInfo companyInfo = null;
+    /**
+     * Find {@link CompanyModel} by company_internal_id
+     *
+     * @param id company_internal_id
+     * @return {@link CompanyModel}
+     */
+    public CompanyModel findCompanyById(int id) {
         String sql = "SELECT * FROM tbl_company WHERE company_internal_id = ?";
         Object[] params = new Object[] { id };
-        companyInfo = this.getJdbcTemplate().queryForObject(sql, params, new BeanPropertyRowMapper<>(CompanyInfo.class));
+        CompanyModel companyInfo = (CompanyModel)this.getJdbcTemplate().queryForObject(
+            sql,
+            params,
+            new BeanPropertyRowMapper(CompanyModel.class)
+        );
         return companyInfo;
     }
 }

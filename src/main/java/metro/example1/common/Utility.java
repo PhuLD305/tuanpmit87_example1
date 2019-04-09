@@ -12,7 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
-import metro.example1.model.CompanyInfo;
+import metro.example1.model.CompanyModel;
 import org.apache.commons.text.WordUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,6 +23,12 @@ import javax.servlet.http.HttpServletResponse;
 @Controller
 public class Utility {
 
+    /**
+     * Convert string to md5
+     *
+     * @param input string need convert
+     * @return string md5
+     */
     public static String getMd5(String input) {
         try {
 
@@ -31,10 +37,10 @@ public class Utility {
 
             // digest() method is called to calculate message digest
             //  of an input digest() return array of byte
-            byte[] messageDigest = md.digest(input.getBytes());
+            byte[] messageDigests = md.digest(input.getBytes());
 
             // Convert byte array into signum representation
-            BigInteger no = new BigInteger(1, messageDigest);
+            BigInteger no = new BigInteger(1, messageDigests);
 
             // Convert message digest into hex value
             String hashtext = no.toString(16);
@@ -50,7 +56,19 @@ public class Utility {
         }
     }
 
-    public static String convertString(String str) {
+    /**
+     * Format string
+     *
+     * <p>Convert tieng viet thanh khong dau</p>
+     *
+     * <p>Delete special char</p>
+     *
+     * <p>Replace multi space to space and trim space</p>
+     *
+     * @param str String need format
+     * @return String
+     */
+    public static String formatString(String str) {
         str = Normalizer.normalize(str, Normalizer.Form.NFD);
         str = str.replaceAll("[^a-zA-Z ]+","");
         str = str.replaceAll("[ ]+"," ");
@@ -58,12 +76,30 @@ public class Utility {
         return WordUtils.capitalizeFully(str);
     }
 
-    public static String convertDate(String date, String srcFormat, String destFormat) throws ParseException {
+    /**
+     * Format date
+     *
+     * @param date String date need format
+     * @param srcFormat source format
+     * @param destFormat destination format
+     * @return String
+     * @throws ParseException
+     */
+    public static String formatDate(String date, String srcFormat, String destFormat) throws ParseException {
         SimpleDateFormat formatSrc = new SimpleDateFormat(srcFormat);
         SimpleDateFormat formatDest = new SimpleDateFormat(destFormat);
-        return !date.equals("") ? formatDest.format(formatSrc.parse(date)) : null;
+        return (date.equals("") == false) ? formatDest.format(formatSrc.parse(date)) : null;
     }
 
+    /**
+     * Create paging
+     *
+     * @param model
+     * @param totalRecord
+     * @param perPage
+     * @param currentPage
+     * @param numPage
+     */
     public static void setPaging(Model model, int totalRecord, int perPage, int currentPage, int numPage) {
         int totalPage = (int)Math.ceil((double)totalRecord / perPage);
         model.addAttribute("currentPage", currentPage);
@@ -73,13 +109,23 @@ public class Utility {
             startPage = currentPage - numPage/2;
             endPage = (totalPage > currentPage + numPage/2) ? currentPage + numPage/2 : totalPage;
         }
-        if (endPage == totalPage && totalPage > numPage) startPage = totalPage - numPage + 1;
+        if (endPage == totalPage && totalPage > numPage) {
+            startPage = totalPage - numPage + 1;
+        }
 
         model.addAttribute("startPage", startPage);
         model.addAttribute("endPage", endPage);
     }
 
-    public static void download(List<Map<String, Object>> userLists, CompanyInfo companyInfo, HttpServletResponse response) throws Exception {
+    /**
+     * Export user list to csv
+     *
+     * @param userLists
+     * @param companyInfo
+     * @param response
+     * @throws Exception
+     */
+    public static void download(List<Map<String, Object>> userLists, CompanyModel companyInfo, HttpServletResponse response) throws Exception {
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition","attachment;filename=user_list.csv");
 
@@ -104,7 +150,7 @@ public class Utility {
         }
     }
 
-    private static StringBuffer generateCsvFileBuffer(List<Map<String, Object>> userLists, CompanyInfo companyInfo) throws ParseException {
+    private static StringBuffer generateCsvFileBuffer(List<Map<String, Object>> userLists, CompanyModel companyInfo) throws ParseException {
         StringBuffer writer = new StringBuffer();
         writer.append("Danh sách thông tin thẻ bảo hiểm").append('\n');
         writer.append('\n');
@@ -114,20 +160,20 @@ public class Utility {
         writer.append("Số điện thoại").append(",").append(companyInfo.getTelephone()).append('\n');
         writer.append('\n');
 
-        String[] header = { "Họ và tên","Giới tính","Ngày sinh","Mã số thẻ bảo hiểm","Ngày bắt đầu","Ngày kết thúc","Nơi đăng ký KCB" };
-        writer.append(String.join(",", header)).append('\n');
-        for (Map<String, Object> user : userLists) {
-            writer.append(user.get("user_full_name").toString()).append(",");
-            writer.append(user.get("user_sex_division").toString().equals("01") ? "Nam" : "Nữ").append(",");
+        String[] headers = { "Họ và tên","Giới tính","Ngày sinh","Mã số thẻ bảo hiểm","Ngày bắt đầu","Ngày kết thúc","Nơi đăng ký KCB" };
+        writer.append(String.join(",", headers)).append('\n');
+        for (Map<String, Object> userMap : userLists) {
+            writer.append(userMap.get("user_full_name").toString()).append(",");
+            writer.append(userMap.get("user_sex_division").toString().equals("01") ? "Nam" : "Nữ").append(",");
             String birthDay = "";
-            if (user.get("birthdate") != null) {
-                birthDay = Utility.convertDate(user.get("birthdate").toString(), "yyyy-MM-dd", "dd/MM/yyyy");
+            if (userMap.get("birthdate") != null) {
+                birthDay = Utility.formatDate(userMap.get("birthdate").toString(), "yyyy-MM-dd", "dd/MM/yyyy");
             }
             writer.append(birthDay).append(",");
-            writer.append("'"+user.get("insurance_number").toString()).append(",");
-            writer.append(Utility.convertDate(user.get("insurance_start_date").toString(), "yyyy-MM-dd", "dd/MM/yyyy")).append(",");
-            writer.append(Utility.convertDate(user.get("insurance_end_date").toString(), "yyyy-MM-dd", "dd/MM/yyyy")).append(",");
-            writer.append(user.get("place_of_register").toString()).append('\n');
+            writer.append("'"+userMap.get("insurance_number").toString()).append(",");
+            writer.append(Utility.formatDate(userMap.get("insurance_start_date").toString(), "yyyy-MM-dd", "dd/MM/yyyy")).append(",");
+            writer.append(Utility.formatDate(userMap.get("insurance_end_date").toString(), "yyyy-MM-dd", "dd/MM/yyyy")).append(",");
+            writer.append(userMap.get("place_of_register").toString()).append('\n');
         }
         return writer;
     }
