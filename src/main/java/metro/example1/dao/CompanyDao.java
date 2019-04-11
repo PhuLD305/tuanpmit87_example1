@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 
 import metro.example1.model.CompanyModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.stereotype.Repository;
@@ -17,20 +18,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class CompanyDao extends JdbcDaoSupport {
     @Autowired
-    public CompanyDao(DataSource dataSource) {
+    public CompanyDao(@Qualifier("dataSource") DataSource dataSource) {
         this.setDataSource(dataSource);
     }
-
 
     /**
      * Find all {@link CompanyModel}, order by name asc
      *
      * @return List of {@link CompanyModel}
      */
-    public List<CompanyModel> getCompanyLists() {
+    public List getCompanyLists() {
         String sql = "SELECT * FROM tbl_company ORDER BY company_name";
-        List<CompanyModel> companyList = this.getJdbcTemplate().query(sql, new BeanPropertyRowMapper(CompanyModel.class));
-        return companyList;
+        return this.getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(CompanyModel.class));
     }
 
     /**
@@ -65,13 +64,12 @@ public class CompanyDao extends JdbcDaoSupport {
      * @return {@link CompanyModel}
      */
     public CompanyModel findCompanyById(int id) {
-        String sql = "SELECT * FROM tbl_company WHERE company_internal_id = ?";
+        String sql = "SELECT * FROM tbl_company WHERE `company_internal_id` = ?";
         Object[] params = new Object[] { id };
-        CompanyModel companyInfo = (CompanyModel)this.getJdbcTemplate().queryForObject(
+        return (CompanyModel)this.getJdbcTemplate().queryForObject(
             sql,
             params,
-            new BeanPropertyRowMapper(CompanyModel.class)
+            new BeanPropertyRowMapper<>(CompanyModel.class)
         );
-        return companyInfo;
     }
 }

@@ -4,13 +4,13 @@ import metro.example1.common.Utility;
 import metro.example1.form.SearchForm;
 import metro.example1.model.UserModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,14 +20,14 @@ import java.util.Map;
 public class UserDao extends JdbcDaoSupport {
 
     @Autowired
-    public UserDao(DataSource dataSource) {
+    public UserDao(@Qualifier("dataSource") DataSource dataSource) {
         this.setDataSource(dataSource);
     }
 
     /**
      * Find all user by condition
      *
-     * @param searchForm
+     * @param searchForm Form search
      * @param companyId company_internal_id
      * @param sort asc or desc
      * @param currentPage current page
@@ -77,12 +77,11 @@ public class UserDao extends JdbcDaoSupport {
             sqlLimit = " LIMIT " + limit * (currentPage - 1) + ", " + limit;
         }
 
-        List<Map<String, Object>> userList = this.getJdbcTemplate().queryForList(sql + sqlWhere + sqlSort + sqlLimit);
-        return userList;
+        return this.getJdbcTemplate().queryForList(sql + sqlWhere + sqlSort + sqlLimit);
     }
 
     /**
-     * Find detail infirmation by user id
+     * Find detail information by user id
      *
      * @param userId user_internal_id
      * @return Map
@@ -93,8 +92,7 @@ public class UserDao extends JdbcDaoSupport {
                 " LEFT JOIN tbl_insurance ins ON ins.insurance_internal_id = user.insurance_internal_id" +
                 " WHERE user.user_internal_id = ?";
 
-        Map<String, Object> userMap = this.getJdbcTemplate().queryForMap(sql, userId);
-        return userMap;
+        return this.getJdbcTemplate().queryForMap(sql, userId);
     }
 
     /**
@@ -108,7 +106,7 @@ public class UserDao extends JdbcDaoSupport {
         String sql = "SELECT count(*) FROM tbl_user user" +
                 " WHERE username = ? AND password = ?";
 
-        Object[] params = new Object[] { userName, Utility.getMd5(passWord) };
+        Object[] params = new Object[] { userName, Utility.convertToMd5(passWord) };
         try {
             List<String> userInfo = this.getJdbcTemplate().queryForList(sql, String.class, params);
             if(Integer.parseInt(userInfo.get(0)) > 0) {
@@ -123,16 +121,15 @@ public class UserDao extends JdbcDaoSupport {
     /**
      * Add a new user
      *
-     * @param userModel
-     * @throws ParseException
+     * @param userModel Model user
      */
-    public void addUser(UserModel userModel) throws ParseException {
+    public void addUser(UserModel userModel) {
         String sql = "INSERT INTO tbl_user VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
 
         int companyId = userModel.getCompanyInternalId();
         int insId = userModel.getInsuranceId();
         String userName = userModel.getUserName();
-        String passWord = Utility.getMd5(userModel.getPassWord());
+        String passWord = Utility.convertToMd5(userModel.getPassWord());
         String fullName = userModel.getUserFullName();
         String sexDivision = userModel.getUserSex();
         String birthDate = Utility.formatDate(userModel.getBirthday(), "dd/MM/yyyy", "yyyy-MM-dd");
@@ -144,10 +141,9 @@ public class UserDao extends JdbcDaoSupport {
     /**
      * Update user information
      *
-     * @param userModel
-     * @throws ParseException
+     * @param userModel Model user
      */
-    public void updateUser(UserModel userModel) throws ParseException {
+    public void updateUser(UserModel userModel) {
         String sql = "UPDATE tbl_user SET"
                 + " company_internal_id = ?, username = ?, user_full_name = ?, user_sex_division = ?, birthdate = ?"
                 + " WHERE user_internal_id = ?";

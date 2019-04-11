@@ -25,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -60,7 +59,7 @@ public class MainController {
                 return "redirect:/user-list";
             }
 
-            ObjectError error = new ObjectError("email","Tên đăng nhập hoặc Mật khẩu không đúng!");
+            ObjectError error = new ObjectError("email", Utility.ERROR_LOGIN);
             bindingResult.addError(error);
         }
         model.addAttribute("arrErr", bindingResult.getAllErrors());
@@ -70,18 +69,13 @@ public class MainController {
 
     @RequestMapping(value = "/logout", method = RequestMethod.GET)
     public String signOut(HttpServletRequest request) {
-        HttpSession session=request.getSession();
+        HttpSession session = request.getSession();
         session.invalidate();
         return "redirect:/";
     }
 
     @RequestMapping(value = "/user-list", method = {RequestMethod.GET, RequestMethod.POST})
-    public String getUserLists(
-        SearchForm searchForm,
-        Model model,
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) throws Exception {
+    public String getUserLists(SearchForm searchForm, Model model, HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession();
         if(session.getAttribute("isLogin") == null) {
             return "redirect:/login";
@@ -104,7 +98,7 @@ public class MainController {
 
         int companyId = companyLists.get(0).getCompanyInternalId();
         if (request.getParameter("companyId") != null) {
-            companyId = Integer.parseInt(request.getParameter("companyId").toString());
+            companyId = Integer.parseInt(request.getParameter("companyId"));
             session.removeAttribute("sessionParamUserName");
             session.removeAttribute("sessionParamInsuranceNumber");
             session.removeAttribute("sessionParamPlaceOfRegister");
@@ -132,7 +126,7 @@ public class MainController {
         }
         int currentPage = 1;
         if (request.getParameter("page") != null) {
-            currentPage = Integer.parseInt(request.getParameter("page").toString());
+            currentPage = Integer.parseInt(request.getParameter("page"));
         } else if (session.getAttribute("sessionPage") != null) {
             currentPage = Integer.parseInt(session.getAttribute("sessionPage").toString());
             session.removeAttribute("sessionPage");
@@ -140,18 +134,35 @@ public class MainController {
         session.setAttribute("sessionPage", currentPage);
 
         int limit = 5;
-        List<Map<String, Object>> userLists = userDao.getUserLists(searchForm,companyId,sort,currentPage,limit,false);
+        List<Map<String, Object>> userLists = userDao.getUserLists(
+            searchForm,
+            companyId,
+            sort,
+            currentPage,
+            limit,
+            false
+        );
         model.addAttribute("userLists", userLists);
         model.addAttribute("paramSort", sort);
         model.addAttribute("searchForm", searchForm);
 
-        List<Map<String, Object>> userTotalLists = userDao.getUserLists(searchForm,companyId,sort,currentPage,limit,true);
+        List<Map<String, Object>> userTotalLists = userDao.getUserLists(
+            searchForm,
+            companyId,
+            sort,
+            currentPage,
+            limit,
+            true
+        );
         int totalRecord = userTotalLists.size();
-        Utility.setPaging(model, totalRecord, limit, currentPage, 5);
+        Map<String, Object> pagingMap = Utility.createPaging(totalRecord, limit, currentPage, 5);
+        for (String key : pagingMap.keySet()) {
+            model.addAttribute(key, pagingMap.get(key));
+        }
 
         if (request.getParameter("act") != null && request.getParameter("act").equals("export")) {
             CompanyModel companyInfo = companyDao.findCompanyById(companyId);
-            Utility.download(userTotalLists, companyInfo, response);
+            Utility.writeCsvToResponse(userTotalLists, companyInfo, response);
         }
         return "userList";
     }
@@ -175,7 +186,7 @@ public class MainController {
         InsuranceModel insuranceModel,
         Model model,
         HttpServletRequest request
-    ) throws ParseException {
+    ) {
         HttpSession session = request.getSession();
         if(session.getAttribute("isLogin") == null) {
             return "redirect:/login";
@@ -195,9 +206,13 @@ public class MainController {
             insuranceModel.setInsuranceNumber(userInfo.get("insurance_number").toString());
             insuranceModel.setPlaceOfRegister(userInfo.get("place_of_register").toString());
             String startDate = userInfo.get("insurance_start_date").toString();
-            insuranceModel.setInsuranceStartDate(Utility.formatDate(startDate, "yyyy-MM-dd", "dd/MM/yyyy"));
+            insuranceModel.setInsuranceStartDate(
+                Utility.formatDate(startDate, "yyyy-MM-dd", "dd/MM/yyyy")
+            );
             String endDate = userInfo.get("insurance_end_date").toString();
-            insuranceModel.setInsuranceEndDate(Utility.formatDate(endDate, "yyyy-MM-dd", "dd/MM/yyyy"));
+            insuranceModel.setInsuranceEndDate(
+                Utility.formatDate(endDate, "yyyy-MM-dd", "dd/MM/yyyy")
+            );
 
             userModel.setUserId(userId);
             userModel.setUserFullName(userInfo.get("user_full_name").toString());
@@ -205,8 +220,8 @@ public class MainController {
             userModel.setPassWord(userInfo.get("password").toString());
             userModel.setUserSex(userInfo.get("user_sex_division").toString());
             if (userInfo.get("birthdate") != null) {
-                String birthdate = userInfo.get("birthdate").toString();
-                userModel.setBirthday(Utility.formatDate(birthdate, "yyyy-MM-dd", "dd/MM/yyyy"));
+                String birthDate = userInfo.get("birthdate").toString();
+                userModel.setBirthday(Utility.formatDate(birthDate, "yyyy-MM-dd", "dd/MM/yyyy"));
             }
 
             model.addAttribute("oldInsuranceNumber", userInfo.get("insurance_number").toString());
@@ -226,7 +241,7 @@ public class MainController {
         BindingResult bindingResult2,
         Model model,
         HttpServletRequest request
-    ) throws ParseException {
+    ) {
         HttpSession session = request.getSession();
         if(session.getAttribute("isLogin") == null) {
             return "redirect:/login";
@@ -234,16 +249,16 @@ public class MainController {
         String oldNumber = request.getParameter("oldInsuranceNumber");
         if (bindingResult1.hasErrors() == false && bindingResult2.hasErrors() == false) {
             boolean check = insuranceDao.checkExistInsuranceNumber(insuranceModel.getInsuranceNumber());
-            if (((oldNumber == null) || ((oldNumber != null) && (oldNumber.equals(insuranceModel.getInsuranceNumber()) == false))) && check) {
-                model.addAttribute("err", "Đã tồn tại thông tin thẻ bảo hiểm!");
+            if (((oldNumber == null) || (oldNumber.equals(insuranceModel.getInsuranceNumber()) == false)) && check) {
+                model.addAttribute("err", Utility.ERROR_EXIST_INSURANCE_NUMBER);
             } else {
                 String hasExist = request.getParameter("hasExist");
                 if (hasExist.equals("0")) {
-                    companyModel.setCompanyName(Utility.formatString(companyModel.getCompanyName()));
+                    companyModel.setCompanyName(Utility.convertVietnameseUnsigned(companyModel.getCompanyName()));
                     int companyId = companyDao.addCompany(companyModel);
                     userModel.setCompanyInternalId(companyId);
                 }
-                userModel.setUserFullName(Utility.formatString(userModel.getUserFullName()));
+                userModel.setUserFullName(Utility.convertVietnameseUnsigned(userModel.getUserFullName()));
                 if(request.getParameter("userId") != null) {
                     insuranceDao.updateInsurance(insuranceModel);
                     userDao.updateUser(userModel);
@@ -259,8 +274,10 @@ public class MainController {
                 return "redirect:/user-list";
             }
         }
-        model.addAttribute("oldInsuranceNumber", oldNumber);
-        List<CompanyModel> companyLists = companyDao.getCompanyLists();
+        if ((oldNumber != null)) {
+            model.addAttribute("oldInsuranceNumber", oldNumber);
+        }
+        List companyLists = companyDao.getCompanyLists();
         model.addAttribute("companyLists", companyLists);
         model.addAttribute("userModel", userModel);
         model.addAttribute("companyModel", companyModel);
@@ -270,7 +287,7 @@ public class MainController {
     }
 
     @RequestMapping(value = "/delete-user", method = RequestMethod.GET)
-    public String deleteUser(Model model, HttpServletRequest request) {
+    public String deleteUser(HttpServletRequest request) {
         HttpSession session = request.getSession();
         if(session.getAttribute("isLogin") == null) {
             return "redirect:/login";

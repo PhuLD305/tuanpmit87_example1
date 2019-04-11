@@ -1,6 +1,5 @@
 package metro.example1.dao;
 
-import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +8,7 @@ import javax.sql.DataSource;
 import metro.example1.common.Utility;
 import metro.example1.model.InsuranceModel;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,22 +18,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class InsuranceDao extends JdbcDaoSupport {
     @Autowired
-    public InsuranceDao(DataSource dataSource) {
+    public InsuranceDao(@Qualifier("dataSource") DataSource dataSource) {
         this.setDataSource(dataSource);
     }
 
     /**
      * Add a new insurance
      *
-     * @param insuranceModel
+     * @param insuranceModel Model insurance
      * @return Last id
-     * @throws ParseException
      */
-    public int addInsurance(InsuranceModel insuranceModel) throws ParseException {
+    public int addInsurance(InsuranceModel insuranceModel) {
         String sql = "INSERT INTO tbl_insurance VALUES(?, ?, ?, ?, ?)";
         String insuranceNumber = insuranceModel.getInsuranceNumber();
-        String startDate = Utility.formatDate(insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd");
-        String endDate = Utility.formatDate(insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd");
+        String startDate = Utility.formatDate(
+            insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd"
+        );
+        String endDate = Utility.formatDate(
+            insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd"
+        );
         String place = insuranceModel.getPlaceOfRegister();
 
         Object[] params = new Object[] { null, insuranceNumber, startDate, endDate, place };
@@ -52,16 +54,19 @@ public class InsuranceDao extends JdbcDaoSupport {
     /**
      * Update insurance information
      *
-     * @param insuranceModel
-     * @throws ParseException
+     * @param insuranceModel Model insurance
      */
-    public void updateInsurance(InsuranceModel insuranceModel) throws ParseException {
+    public void updateInsurance(InsuranceModel insuranceModel) {
         String sql = "UPDATE tbl_insurance SET"
                 + " insurance_number = ?, insurance_start_date = ?, insurance_end_date = ?, place_of_register =?"
                 + " WHERE insurance_internal_id = ?";
         String insuranceNumber = insuranceModel.getInsuranceNumber();
-        String startDate = Utility.formatDate(insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd");
-        String endDate = Utility.formatDate(insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd");
+        String startDate = Utility.formatDate(
+            insuranceModel.getInsuranceStartDate(), "dd/MM/yyyy", "yyyy-MM-dd"
+        );
+        String endDate = Utility.formatDate(
+            insuranceModel.getInsuranceEndDate(), "dd/MM/yyyy", "yyyy-MM-dd"
+        );
         String place = insuranceModel.getPlaceOfRegister();
 
         Object[] params = new Object[] { insuranceNumber, startDate, endDate, place, insuranceModel.getInsuranceId() };
@@ -78,14 +83,7 @@ public class InsuranceDao extends JdbcDaoSupport {
         String sql = "SELECT count(*) FROM tbl_insurance" +
                 " WHERE insurance_number = ?";
         Object[] params = new Object[] { insuranceNumber };
-        try {
-            List<String> insuranceInfo = this.getJdbcTemplate().queryForList(sql, String.class, params);
-            if(Integer.parseInt(insuranceInfo.get(0)) > 0) {
-                return true;
-            }
-        } catch (EmptyResultDataAccessException e) {
-            return false;
-        }
-        return false;
+        List<String> insuranceInfo = this.getJdbcTemplate().queryForList(sql, String.class, params);
+        return (Integer.parseInt(insuranceInfo.get(0)) > 0);
     }
 }
