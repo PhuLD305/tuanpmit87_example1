@@ -27,7 +27,7 @@ public class CompanyDao extends JdbcDaoSupport {
      *
      * @return List of {@link CompanyModel}
      */
-    public List getCompanyLists() {
+    public List<CompanyModel> getCompanyLists() {
         String sql = "SELECT * FROM tbl_company ORDER BY company_name";
         return this.getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(CompanyModel.class));
     }

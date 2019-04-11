@@ -277,7 +277,7 @@ public class MainController {
         if ((oldNumber != null)) {
             model.addAttribute("oldInsuranceNumber", oldNumber);
         }
-        List companyLists = companyDao.getCompanyLists();
+        List<CompanyModel> companyLists = companyDao.getCompanyLists();
         model.addAttribute("companyLists", companyLists);
         model.addAttribute("userModel", userModel);
         model.addAttribute("companyModel", companyModel);
